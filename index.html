@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Fire-Base</title>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<!--Style únicamente para la calculadora-->
+<style>
+    #grid-container {
+        min-height: 93vh;
+        width: 100vw;
+        display: flex;
+        flex-flow: column-reverse nowrap;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #calc>div {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #007bff;
+        font-weight: bold;
+        font-size: 150%;
+        border-radius: 10px;
+        color: #f7f7f7;
+        cursor: pointer;
+        box-shadow: 0 2px #999;
+    }
+
+    #calc>div:active {
+        box-shadow: 0 2px #666;
+        transform: translateY(3px);
+    }
+
+    #calc>div:hover {
+        background: #0000ff;
+    }
+
+    /*Tecla C (clear)*/
+    #calc>#clear {
+        background-color: #d9534f;
+    }
+
+    #calc>#clear:hover {
+        background-color: red;
+    }
+
+    /*Visor de la calculadora*/
+    #output {
+        background-color: #f7f7f7;
+        margin: 10px 0;
+        border: 2px solid #007bff;
+        box-sizing: content-box;
+        border-radius: 10px;
+        width: 490px;
+        height: 50px;
+        padding-right: 10px;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        font-weight: bold;
+        font-size: 150%;
+        overflow: auto;
+    }
+
+    /*grid-template area orgniza la disposición de los divs teniendo en cuenta su grid-area*/
+    #calc {
+        display: grid;
+        grid-gap: 5px;
+        width: 500px;
+        height: 400px;
+        grid-template-areas:
+            'seven eight nine plus clear'
+            'four five six minus backspace'
+            'one two three by float'
+            'zeroo zeroo zeroo divided equal';
+    }
+
+    /*Disposición responsive para celular*/
+    @media only screen and (max-width: 576px) {
+        #calc {
+            width: 300px;
+            height: 375px;
+            grid-template-areas:
+                'seven eight nine plus'
+                'four five six minus'
+                'one two three by'
+                'float zeroo zeroo divided'
+                'clear backspace equal equal';
+        }
+
+        #output {
+            width: 290px;
+        }
+    }
+</style>
+
+<body onload="app.date()"
+    style="background: #000000;; background: -webkit-linear-gradient(to right, #000000, #434343); background: linear-gradient(to right, #000000, #434343);">
+
+
+
+    <div class="container-fluid" id="app">
+
+
+
+        <!--Contador-->
+        <div class="row justify-content-center" style="margin-top: 40px;">
+            <div class="col-4 d-flex justify-content-center">
+                <button type="button" class="btn btn-danger" style="cursor: default;">
+                    Tareas pendientes: <span class="badge badge-light">{{totalTasks}}</span>
+                </button>
+            </div>
+        </div>
+
+
+
+        <!--Card para cargar tareas-->
+        <div class="row justify-content-center" style="margin-top: 40px;">
+
+            <div class="col-10 col-sm-10 col-md-8 col-lg-8">
+
+                <div class="card text-center border-dark">
+                    <div class="card-header">
+
+                    </div>
+                    <div class="card-body text-dark">
+                        <h2 class="card-title">AGREGUE UNA TAREA</h2>
+                        <div>
+                            Título: <input class="rounded" v-model="title" style="width: 30%;">
+                        </div>
+                        <div style="margin-top: 10px;">
+                            Descripción: <input class="rounded" v-model="description" style="width: 70%;">
+                        </div>
+                        <div style="margin-top: 10px;">
+                            Prioridad
+                            <select class="rounded" v-model="priority">
+                                <option value="alta" style="background-color: #d9534f;">Alta</option>
+                                <option value="media" style="background-color: #f0ad4e;">Media</option>
+                                <option value="baja" style="background-color: #5cb85c;">Baja</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn btn-dark" v-on:click="addTaskCard()">Añadir</button>
+                    </div>
+                    <div class="card-footer text-muted" style="margin-top: 20px;">
+                        {{creationDate}}
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!--Cards con las tareas que se van cargando-->
+        <div class="row" id="tasksCards" style="margin-top: 40px; margin-bottom: 40px;">
+
+
+        </div>
+
+
+        <!--Calculadora-->
+        <div class="row" id="grid-container">
+
+            <div id="calc">
+                <div v-for="number in numbers" v-bind:id="number.name" class="key"
+                    v-bind:style="'grid-area:' + number.name" v-on:click="print(number)">{{number.value}}</div>
+                <div v-for="op in ops" v-bind:id="op.name" class="key op" v-bind:style="'grid-area:' + op.name"
+                    v-on:click="print(op)">
+                    {{op.value}}</div>
+                <div v-for="action in actions" v-bind:id="action.name" v-bind:style="'grid-area:' + action.name"
+                    v-on:click="handleFn(action.name)">{{action.value}}</div>
+            </div>
+            <div id="output"><template v-for="value in output">{{value}}</template></div>
+
+            <div class="row justify-content-center">
+
+                <div>
+                    <header style="color: #f7f7f7;">
+                        <h1><i>CALCULATOR</i></h1>
+                    </header>
+                </div>
+    
+            </div>
+
+        </div>
+
+        
+
+
+
+
+
+
+
+
+    </div>
+
+
+
+    <!--FireBase-->
+    <!-- The core Firebase JS SDK is always required and must be listed first -->
+    <script src="https://www.gstatic.com/firebasejs/7.14.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.14.1/firebase-database.js"></script>
+
+    <!-- TODO: Add SDKs for Firebase products that you want to use
+     https://firebase.google.com/docs/web/setup#available-libraries -->
+
+    <script>
+        // Your web app's Firebase configuration
+        var firebaseConfig = {
+            apiKey: "AIzaSyDVE692YfClUKvuLNsIBtJFx4Ml95uNweg",
+            authDomain: "tareas-10ef7.firebaseapp.com",
+            databaseURL: "https://tareas-10ef7.firebaseio.com",
+            projectId: "tareas-10ef7",
+            storageBucket: "tareas-10ef7.appspot.com",
+            messagingSenderId: "81564117084",
+            appId: "1:81564117084:web:0211422082bbed173c1e99"
+        };
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+    </script>
+
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+        integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous">
+    </script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+        integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous">
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>
